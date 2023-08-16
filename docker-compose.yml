@@ -1,0 +1,134 @@
+version: "3.9"
+services:
+  postgresql:
+    container_name: postgresql
+    image: postgres:12.9
+    platform: linux/x86_64
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: batch
+      POSTGRES_PASSWORD: batch
+      POSTGRES_DB: batchdb
+    volumes:
+      - ./db/postgresql/data:/var/lib/postgresql --user 1000
+      - ./db/postgresql/init.d:/docker-entrypoint-initdb.d
+    networks:
+      batch_network:
+        ipv4_address: 172.16.1.5
+    extra_hosts:
+      - "postgresql:172.16.1.5"
+      - "mongo:172.16.1.6"
+      - "oracle:172.16.1.7"
+      - "jenkins:172.16.1.8"
+  mongo:
+    container_name: mongo
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: mongo
+      MONGO_INITDB_DATABASE: mongodb
+    volumes:
+      - ./db/mongo/data:/var/lib/mongo
+    networks:
+      batch_network:
+        ipv4_address: 172.16.1.6
+    extra_hosts:
+      - "postgresql:172.16.1.5"
+      - "mongo:172.16.1.6"
+      - "oracle:172.16.1.7"
+      - "jenkins:172.16.1.8"
+  oracle:
+    container_name: oracle
+    image: wnameless/oracle-xe-11g-r2:latest
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      ORACLE_ALLOW_REMOTE: true
+      ORACLE_DISABLE_ASYNCH_IO: true
+      TZ: Asia/Seoul
+    volumes:
+      - ./db/oracle/oradata:/etc/oracle/oradata
+      - ./db/oracle/init.d:/docker-entrypoint-initdb.d
+    networks:
+      batch_network:
+        ipv4_address: 172.16.1.7
+    extra_hosts:
+      - "postgresql:172.16.1.5"
+      - "mongo:172.16.1.6"
+      - "oracle:172.16.1.7"
+      - "jenkins:172.16.1.8"
+  jenkins:
+    container_name: jenkins
+    image: jenkins/jenkins:lts-jdk11
+    user: jenkins
+    environment:
+      JENKINS_OPTS: --httpPort=9090 # 기본포트가 8080이나 9090으로 변경
+    ports:
+      - "9090:9090"                  # Jenkins Web UI 포트
+      - "9091:9091"                # Jenkins API 포트
+    volumes:
+      - ./jenkins_home:/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      batch_network:
+        ipv4_address: 172.16.1.8
+    extra_hosts:
+      - "postgresql:172.16.1.5"
+      - "mongo:172.16.1.6"
+      - "oracle:172.16.1.7"
+      - "jenkins:172.16.1.8"
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - ./message/zookeeper:/zookeeper
+    networks:
+      - batch_network
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    volumes:
+      - ./message/kafka:/kafka
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ENABLE_KRAFT=no
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    depends_on:
+      - zookeeper
+    networks:
+      - batch_network
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - DYNAMIC_CONFIG_ENABLED=true
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    networks:
+      - batch_network
+    depends_on:
+      - kafka
+
+networks:
+  batch_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.1.0/24
