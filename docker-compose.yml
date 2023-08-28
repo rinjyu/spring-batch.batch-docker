@@ -67,13 +67,15 @@ services:
     container_name: jenkins
     image: jenkins/jenkins:lts-jdk11
     user: jenkins
+    privileged: true
     environment:
       JENKINS_OPTS: --httpPort=9090 # 기본포트가 8080이나 9090으로 변경
+      TZ: Asia/Seoul
     ports:
       - "9090:9090"                  # Jenkins Web UI 포트
       - "9091:9091"                # Jenkins API 포트
     volumes:
-      - ./jenkins_home:/jenkins_home
+      - ./jenkins:/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       batch_network:
