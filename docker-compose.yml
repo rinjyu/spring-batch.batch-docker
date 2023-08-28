@@ -33,6 +33,7 @@ services:
       MONGO_INITDB_DATABASE: mongodb
     volumes:
       - ./db/mongo/data:/var/lib/mongo
+      - ./db/mongo/init.d:/docker-entrypoint-initdb.d
     networks:
       batch_network:
         ipv4_address: 172.16.1.6
