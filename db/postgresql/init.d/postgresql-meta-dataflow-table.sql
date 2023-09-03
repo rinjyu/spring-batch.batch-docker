@@ -1,3 +1,6 @@
+-- ###################################
+--  Spring Cloud Data Flow
+-- ###################################
 create sequence if not exists hibernate_sequence start 1 increment 1;
 
 create table app_registration (
@@ -82,6 +85,9 @@ CREATE TABLE TASK_LOCK (
   constraint LOCK_PK primary key (LOCK_KEY, REGION)
 );
 
+-- ###################################
+--  Spring Cloud Skipper
+-- ###################################
 create table skipper_app_deployer_data (
   id int8 not null,
   object_version int8,
@@ -344,13 +350,14 @@ alter table transition_actions
   foreign key (jpa_repository_transition_id)
   references transition;
 
+-- ###################################
+--  Spring Cloud Data Flow V2
+-- ###################################
 alter table stream_definitions add column description varchar(255);
 
 alter table stream_definitions add column original_definition text;
 
 alter table task_definitions add column description varchar(255);
-
-update stream_definitions set original_definition=definition;
 
 CREATE TABLE task_execution_metadata (
   id int8 NOT NULL,
@@ -363,12 +370,34 @@ CREATE TABLE task_execution_metadata (
 
 CREATE SEQUENCE task_execution_metadata_seq MAXVALUE 9223372036854775807 NO CYCLE;
 
+-- ###################################
+--  Spring Cloud Data Flow V2 After
+-- ###################################
+update stream_definitions set original_definition=definition;
+
+-- ###################################
+--  Spring Cloud Data Flow V3
+-- ###################################
 alter table audit_records add platform_name varchar(255);
 
+-- ###################################
+--  Spring Cloud Data Flow V4
+-- ###################################
+create index STEP_NAME_IDX on BATCH_STEP_EXECUTION (STEP_NAME);
+
+-- ###################################
+--  Spring Cloud Data Flow V5
+-- ###################################
 create index TASK_EXECUTION_ID_IDX on TASK_EXECUTION_PARAMS (TASK_EXECUTION_ID);
 
+-- ###################################
+--  Spring Cloud Data Flow V6
+-- ###################################
 alter table app_registration add boot_version varchar(16);
 
+-- ###################################
+--  Spring Cloud Data Flow V7
+-- ###################################
 CREATE TABLE BOOT3_TASK_EXECUTION
 (
     TASK_EXECUTION_ID     BIGINT NOT NULL PRIMARY KEY,
@@ -504,6 +533,9 @@ CREATE SEQUENCE BOOT3_BATCH_STEP_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO C
 CREATE SEQUENCE BOOT3_BATCH_JOB_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 CREATE SEQUENCE BOOT3_BATCH_JOB_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 
+-- ###################################
+--  Spring Cloud Data Flow V8
+-- ###################################
 CREATE VIEW AGGREGATE_TASK_EXECUTION AS
 SELECT TASK_EXECUTION_ID, START_TIME, END_TIME, TASK_NAME, EXIT_CODE, EXIT_MESSAGE, ERROR_MESSAGE, LAST_UPDATED, EXTERNAL_EXECUTION_ID, PARENT_EXECUTION_ID, 'boot2' AS SCHEMA_TARGET FROM TASK_EXECUTION
 UNION ALL
@@ -534,6 +566,9 @@ SELECT STEP_EXECUTION_ID, VERSION, STEP_NAME, JOB_EXECUTION_ID, START_TIME, END_
 UNION ALL
 SELECT STEP_EXECUTION_ID, VERSION, STEP_NAME, JOB_EXECUTION_ID, START_TIME, END_TIME, STATUS, COMMIT_COUNT, READ_COUNT, FILTER_COUNT, WRITE_COUNT, READ_SKIP_COUNT, WRITE_SKIP_COUNT, PROCESS_SKIP_COUNT, ROLLBACK_COUNT, EXIT_CODE, EXIT_MESSAGE, LAST_UPDATED, 'boot3' AS SCHEMA_TARGET FROM BOOT3_BATCH_STEP_EXECUTION;
 
+-- ###################################
+--  Spring Cloud Data Flow V9
+-- ###################################
 ALTER TABLE task_execution_metadata RENAME TO task_execution_metadata_lc;
 ALTER TABLE task_execution_metadata_lc RENAME TO TASK_EXECUTION_METADATA;
 ALTER SEQUENCE task_execution_metadata_seq RENAME TO task_execution_metadata_seq_lc;
