@@ -128,6 +128,77 @@ services:
       - batch_network
     depends_on:
       - kafka
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.1
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - type: bind
+        source: ./elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPS="-Xmx512m -Xms512m"
+      - ELASTIC_PASSWORD=elastic
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - elk
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.9.1
+    container_name: logstash
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    volumes:
+      - type: bind
+        source: ./logstash/config/
+        target: /usr/share/logstash/config/
+        read_only: true
+      - type: bind
+        source: ./logstash/pipeline/
+        target: /usr/share/logstash/pipeline/
+        read_only: true
+      - type: bind
+        source: ./logstash/data/
+        target: /usr/share/logstash/data/
+    environment:
+      - LS_JAVA_OPS="-Xmx512m -Xms512m"
+      - LOGSTASH_INTERNAL_PASSWORD=elastic
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    links:
+      - elasticsearch
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.1
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    volumes:
+      - type: bind
+        source: ./kibana/config/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: true
+    environment:
+      - KIBANA_SYSTEM_PASSWORD=elastic
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - logstash
+    links:
+      - elasticsearch
 
 networks:
   batch_network:
@@ -135,3 +206,11 @@ networks:
       driver: default
       config:
         - subnet: 172.16.1.0/24
+  elk:
+    driver: bridge
+
+volumes:
+  elasticsearch:
+    driver: local
+  kibana:
+    driver: local
