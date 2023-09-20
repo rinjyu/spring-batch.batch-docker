@@ -136,7 +136,7 @@ services:
       - "9300:9300"
     volumes:
       - type: bind
-        source: ./elasticsearch/config/elasticsearch.yml
+        source: ./elasticstack/elasticsearch/config/elasticsearch.yml
         target: /usr/share/elasticsearch/config/elasticsearch.yml
         read_only: true
       - type: volume
@@ -161,15 +161,15 @@ services:
       - "9600:9600"
     volumes:
       - type: bind
-        source: ./logstash/config/
+        source: ./elasticstack/logstash/config/
         target: /usr/share/logstash/config/
         read_only: true
       - type: bind
-        source: ./logstash/pipeline/
+        source: ./elasticstack/logstash/pipeline/
         target: /usr/share/logstash/pipeline/
         read_only: true
       - type: bind
-        source: ./logstash/data/
+        source: ./elasticstack/logstash/data/
         target: /usr/share/logstash/data/
     environment:
       - LS_JAVA_OPS="-Xmx512m -Xms512m"
@@ -187,7 +187,7 @@ services:
       - "5601:5601"
     volumes:
       - type: bind
-        source: ./kibana/config/kibana.yml
+        source: ./elasticstack/kibana/config/kibana.yml
         target: /usr/share/kibana/config/kibana.yml
         read_only: true
     environment:

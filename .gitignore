@@ -896,4 +896,4 @@ HELP.md
 logs/
 
 ### Elastic Stack ###
-/logstash/data/**
+/elasticstack/logstash/data/**
